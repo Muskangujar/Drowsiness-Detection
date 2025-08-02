@@ -35,7 +35,7 @@ This project implements a Drowsiness Detection System for drivers using computer
 ### How It Works
 
 1. Laptop webcam continuously monitors the user’s face.
-2. Eye landmarks are detected and EAR is calculated.
+2. Eye landmarks are detected and Eye Aspect Ratio (EAR) is calculated.
 3. If EAR drops below threshold for a defined period:
    - Python sends `'a'` to Arduino.
    - Arduino activates buzzer, LED and LCD alert.
@@ -68,6 +68,7 @@ This project implements a Drowsiness Detection System for drivers using computer
 - imutils
 - Arduino IDE
 - Proteus 8 (for simulation)
+- Git LFS (for large `.dat` file)
 
 ---
 
@@ -100,10 +101,22 @@ Drowsiness-Detection/
    pip install -r requirements.txt
    ```
 
-2. Place `.dat` file under `model/` directory:
+2. Clone and set up Git LFS for the `.dat` file:
 
-   - File: `shape_predictor_68_face_landmarks.dat`
-   - It is used by dlib to detect 68 facial landmarks
+   GitHub uses Git LFS (Large File Storage) to store the large `.dat` model file used by dlib.
+
+   Run the following after cloning the repo:
+
+   ```bash
+   git lfs install
+   git lfs pull
+   ```
+
+   This will download the required model:
+
+   ```
+   model/shape_predictor_68_face_landmarks.dat
+   ```
 
 3. Run the Python script:
 
@@ -122,15 +135,17 @@ Drowsiness-Detection/
 
 ### Circuit Connections
 
-| Arduino Pin | Component                                   |
-| ----------- | ------------------------------------------- |
-| D2–D7       | 16x2 LCD                                    |
-| D8          | Buzzer (via transistor)                     |
-| D9          | Red LED                                     |
-| GND & 5V    | Power for LCD, buzzer                       |
-| USB         | Connects to laptop for serial communication |
+| Arduino Pin | Connects To                    | Description                      |
+| ----------- | ------------------------------ | -------------------------------- |
+| D2–D7       | 16x2 LCD                       | Used to display status messages  |
+| D8          | Buzzer (via transistor)        | For audible alert                |
+| D9          | Red LED                        | For visual alert                 |
+| GND         | Common ground                  | Shared with all components       |
+| 5V          | Power supply to LCD and buzzer | Power from Arduino               |
+| USB         | Laptop                         | For power + serial communication |
 
-The buzzer is connected through a transistor for better current control. Proteus simulation and PCB image demonstrate the same.
+- **Transistor** is used between buzzer and Arduino for current control.
+- **Resistors** are used for base control of transistor and current limiting for LED.
 
 ---
 
@@ -142,19 +157,22 @@ We used **Proteus 8** to simulate the complete circuit.
 - Buzzer and LED trigger based on serial input
 - You can simulate sending `'a'` or `'b'` using Proteus Serial Terminal
 
-
-
 ---
 
 ### Code Breakdown
 
-#### Python Script
+#### Python Script (Detailed Explanation)
 
-- Uses OpenCV to capture webcam feed
-- Detects facial landmarks using `.dat` model from dlib
-- Computes Eye Aspect Ratio (EAR)
-- If EAR < 0.21 → sleep; EAR between 0.21–0.25 → drowsy
-- Sends serial signal `'a'` or `'b'` accordingly
+- **Captures webcam feed** using OpenCV.
+- **Detects facial landmarks** using the pre-trained `.dat` model from the `dlib` library.
+- **Calculates Eye Aspect Ratio (EAR)** using 6 key points around each eye.
+- **Decision logic based on EAR**:
+  - `EAR < 0.21` → Driver is likely **sleeping**.
+  - `0.21 ≤ EAR ≤ 0.25` → Driver is **drowsy**.
+  - `EAR > 0.25` → Driver is **awake**.
+- Based on the EAR, the Python script sends a serial signal:
+  - `'a'` → Drowsy or sleeping (alerts Arduino)
+  - `'b'` → Awake (no alert needed)
 
 #### Arduino Sketch
 
@@ -176,7 +194,9 @@ We used **Proteus 8** to simulate the complete circuit.
 
 #### 1. PCB Hardware Setup
 
-This is the physical implementation of the project:
+
+
+#### 2. Proteus Simulation
 
 
 
@@ -184,5 +204,5 @@ This is the physical implementation of the project:
 
 ### License
 
-This project is intended for academic and demonstration purposes. Feel free to use, modify, and expand upon it.
+This project is intended for academic and demonstration purposes. It was originally created by YouTube. Feel free to use, modify, and expand upon it.
 
